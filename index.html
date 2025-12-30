@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vectores PRO - √(Raiz) Cuadrada²</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Open+Sans:wght@400;600;700&display=swap');
+
+        body { 
+            background: white; font-family: 'Open Sans', sans-serif; 
+            display: flex; justify-content: center; padding: 20px; color: #333;
+        }
+
+        .calculadora-moderna {
+            max-width: 950px; width: 100%; padding: 40px;
+            background: #F2F2F2; border-radius: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+        }
+
+        .header-section { text-align: center; margin-bottom: 25px; }
+        .header-section h1 { font-size: 26px; margin: 0; font-family: 'Playfair Display', serif; }
+        .header-section p { font-size: 18px; font-weight: 600; font-family: 'Playfair Display', serif; margin: 5px 0; }
+
+        /* PÍLDORA */
+        .pill-container { display: flex; justify-content: center; margin-bottom: 30px; }
+        .pill { background: #e0e0e0; border-radius: 50px; padding: 5px; display: flex; border: 1px solid #ccc; }
+        .pill-btn { 
+            border: none; padding: 10px 25px; border-radius: 40px; font-size: 13px; 
+            font-weight: 700; cursor: pointer; transition: 0.3s; background: transparent; color: #666; 
+        }
+        .pill-btn.active { background: white; color: black; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        .content-section { display: none; }
+        .active-section { display: block; }
+
+        /* TABLA Y ENTRADAS */
+        .vector-container { background: white; border-radius: 25px; padding: 20px; border: 1px solid #ddd; margin-bottom: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { font-size: 11px; text-transform: uppercase; color: #888; padding: 10px; }
+        td { padding: 8px; text-align: center; }
+
+        input[type="number"], .res-input { 
+            width: 70px; padding: 10px; border: 1px solid #ccc; border-radius: 15px; 
+            text-align: center; font-family: 'Open Sans', sans-serif; font-size: 13px;
+        }
+        .color-picker { border: none; width: 30px; height: 30px; cursor: pointer; background: none; vertical-align: middle; }
+
+        /* ARREGLO TRIPLE PRODUCTO (OVERFLOW) */
+        .prod-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .vector-card { background: white; padding: 15px; border-radius: 25px; border: 1px solid #ddd; box-sizing: border-box; }
+        .vector-card h3 { font-size: 13px; margin: 0 0 10px 0; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .input-row { display: flex; gap: 5px; justify-content: center; }
+        .input-row input { width: 100%; min-width: 0; } /* Evita que se salgan */
+
+        .btn-black { 
+            background: black; color: white; border: none; padding: 12px 25px; 
+            border-radius: 30px; font-weight: 700; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin: 5px auto;
+        }
+        .btn-circle { width: 35px; height: 35px; border-radius: 50%; padding: 0; }
+        .btn-remove { background: #ddd; color: #666; font-size: 14px; }
+        .btn-download { background: white; color: black; border: 1px solid #ccc; margin-top: 15px; }
+
+        #graph-container { background: white; border-radius: 25px; border: 1px solid #ddd; height: 450px; position: relative; overflow: hidden; }
+        .watermark { position: absolute; bottom: 15px; right: 20px; font-family: 'Playfair Display', serif; font-weight: bold; font-size: 12px; color: #bbb; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="calculadora-moderna">
+    <div class="header-section">
+        <h1>Calculadora de Vectores</h1>
+        <p>√(Raiz) Cuadrada²</p>
+    </div>
+
+    <div class="pill-container">
+        <div class="pill">
+            <button id="btn-sum" class="pill-btn active" onclick="switchTab('sumas')">Sumas y Restas</button>
+            <button id="btn-prod" class="pill-btn" onclick="switchTab('productos')">Productos</button>
+        </div>
+    </div>
+
+    <div id="sec-sumas" class="content-section active-section">
+        <div class="vector-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Color</th>
+                        <th>ID</th>
+                        <th>Magnitud</th>
+                        <th>Ángulo (°)</th>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="vector-body"></tbody>
+                <tfoot>
+                    <tr style="border-top: 2px solid #eee;">
+                        <td></td>
+                        <td style="font-weight: 700;">Σ</td>
+                        <td><input id="total-mag" class="res-input" readonly></td>
+                        <td><input id="total-ang" class="res-input" readonly></td>
+                        <td><input id="total-x" class="res-input" readonly></td>
+                        <td><input id="total-y" class="res-input" readonly></td>
+                        <td><button class="btn-black btn-circle" onclick="addVectorRow()">+</button></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div id="graph-container">
+            <div id="plot-sum" style="width:100%; height:100%;"></div>
+            <div class="watermark">√(Raiz) Cuadrada²</div>
+        </div>
+        <button class="btn-black btn-download" onclick="downloadPNG('plot-sum')">Descargar en PNG</button>
+    </div>
+
+    <div id="sec-productos" class="content-section">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <select id="prod-type" style="padding: 10px; border-radius: 15px; font-family: 'Open Sans'; font-weight: 600;" onchange="toggleVectorC()">
+                <option value="dot">Producto Punto (A · B)</option>
+                <option value="cross">Producto Cruz (A × B)</option>
+                <option value="triple">Triple Producto Cruz (A × (B × C))</option>
+            </select>
+        </div>
+
+        <div class="prod-grid">
+            <div class="vector-card">
+                <h3>Vector A</h3>
+                <div class="input-row">
+                    <input type="number" id="ax" placeholder="X">
+                    <input type="number" id="ay" placeholder="Y">
+                    <input type="number" id="az" placeholder="Z" value="0">
+                </div>
+            </div>
+            <div class="vector-card">
+                <h3>Vector B</h3>
+                <div class="input-row">
+                    <input type="number" id="bx" placeholder="X">
+                    <input type="number" id="by" placeholder="Y">
+                    <input type="number" id="bz" placeholder="Z" value="0">
+                </div>
+            </div>
+            <div class="vector-card" id="card-c" style="display:none;">
+                <h3>Vector C</h3>
+                <div class="input-row">
+                    <input type="number" id="cx" placeholder="X">
+                    <input type="number" id="cy" placeholder="Y">
+                    <input type="number" id="cz" placeholder="Z" value="0">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-black" style="width:100%" onclick="calculateProduct()">Calcular y Graficar</button>
+        <div id="res-prod-box" style="margin:20px 0; text-align:center; font-weight:700;"></div>
+
+        <div id="graph-container">
+            <div id="plot-prod" style="width:100%; height:100%;"></div>
+            <div class="watermark">√(Raiz) Cuadrada²</div>
+        </div>
+        <button class="btn-black btn-download" onclick="downloadPNG('plot-prod')">Descargar en PNG</button>
+    </div>
+</div>
+
+<canvas id="export-canvas" style="display:none;"></canvas>
+
+<script>
+    let vectorData = [];
+    const defaultColors = ['#000000', '#333333', '#666666', '#888888', '#aaaaaa'];
+
+    function switchTab(mode) {
+        document.getElementById('sec-sumas').className = 'content-section' + (mode === 'sumas' ? ' active-section' : '');
+        document.getElementById('sec-productos').className = 'content-section' + (mode === 'productos' ? ' active-section' : '');
+        document.getElementById('btn-sum').classList.toggle('active', mode === 'sumas');
+        document.getElementById('btn-prod').classList.toggle('active', mode === 'productos');
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+    }
+
+    function addVectorRow() {
+        const id = Date.now();
+        const color = defaultColors[vectorData.length % defaultColors.length];
+        vectorData.push({ id, mag: 0, ang: 0, x: 0, y: 0, color: color });
+        renderTable();
+    }
+
+    function removeVector(id) {
+        vectorData = vectorData.filter(v => v.id !== id);
+        renderTable();
+        updateSums();
+    }
+
+    function renderTable() {
+        const body = document.getElementById('vector-body');
+        body.innerHTML = '';
+        vectorData.forEach((v, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="color" class="color-picker" value="${v.color}" oninput="updateColor(${v.id}, this.value)"></td>
+                <td style="font-weight:700; color:#888">${String.fromCharCode(65 + index)}</td>
+                <td><input type="number" id="m-${v.id}" value="${v.mag}" oninput="updateFromPolar(${v.id})"></td>
+                <td><input type="number" id="a-${v.id}" value="${v.ang}" oninput="updateFromPolar(${v.id})"></td>
+                <td><input type="number" id="x-${v.id}" value="${v.x}" oninput="updateFromCartesian(${v.id})"></td>
+                <td><input type="number" id="y-${v.id}" value="${v.y}" oninput="updateFromCartesian(${v.id})"></td>
+                <td><button class="btn-black btn-circle btn-remove" onclick="removeVector(${v.id})">×</button></td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+
+    function updateColor(id, val) {
+        vectorData.find(v => v.id === id).color = val;
+        updateSums();
+    }
+
+    function updateFromPolar(id) {
+        const m = parseFloat(document.getElementById(`m-${id}`).value) || 0;
+        const a = parseFloat(document.getElementById(`a-${id}`).value) || 0;
+        const x = m * Math.cos(a * Math.PI / 180);
+        const y = m * Math.sin(a * Math.PI / 180);
+        document.getElementById(`x-${id}`).value = x.toFixed(2);
+        document.getElementById(`y-${id}`).value = y.toFixed(2);
+        saveAndSync(id, m, a, x, y);
+    }
+
+    function updateFromCartesian(id) {
+        const x = parseFloat(document.getElementById(`x-${id}`).value) || 0;
+        const y = parseFloat(document.getElementById(`y-${id}`).value) || 0;
+        const m = Math.sqrt(x*x + y*y);
+        let a = Math.atan2(y, x) * 180 / Math.PI;
+        if (a < 0) a += 360;
+        document.getElementById(`m-${id}`).value = m.toFixed(2);
+        document.getElementById(`a-${id}`).value = a.toFixed(2);
+        saveAndSync(id, m, a, x, y);
+    }
+
+    function saveAndSync(id, m, a, x, y) {
+        const v = vectorData.find(item => item.id === id);
+        v.mag = m; v.ang = a; v.x = x; v.y = y;
+        updateSums();
+    }
+
+    function updateSums() {
+        let tx = 0, ty = 0;
+        vectorData.forEach(v => { tx += v.x; ty += v.y; });
+        const tm = Math.sqrt(tx*tx + ty*ty);
+        let ta = Math.atan2(ty, tx) * 180 / Math.PI;
+        if (ta < 0) ta += 360;
+
+        document.getElementById('total-x').value = tx.toFixed(2);
+        document.getElementById('total-y').value = ty.toFixed(2);
+        document.getElementById('total-mag').value = tm.toFixed(2);
+        document.getElementById('total-ang').value = ta.toFixed(2);
+        drawSumGraph(tx, ty);
+    }
+
+    function drawSumGraph(tx, ty) {
+        const traces = [];
+        let cx = 0, cy = 0;
+        vectorData.forEach((v, i) => {
+            traces.push({
+                x: [cx, cx + v.x], y: [cy, cy + v.y], mode: 'lines+markers',
+                name: `Vec ${String.fromCharCode(65 + i)}`,
+                line: { width: 4, color: v.color }, marker: { size: 6 }
+            });
+            cx += v.x; cy += v.y;
+        });
+        traces.push({
+            x: [0, tx], y: [0, ty], mode: 'lines+markers', name: 'Resultante',
+            line: { width: 4, color: 'black', dash: 'dash' }, marker: { size: 10, symbol: 'arrow' }
+        });
+        Plotly.newPlot('plot-sum', traces, {
+            xaxis: { zeroline: true, gridcolor: '#eee' },
+            yaxis: { zeroline: true, gridcolor: '#eee', scaleanchor: "x" },
+            margin: { l: 40, r: 20, t: 20, b: 40 }
+        }, {responsive: true, displayModeBar: false});
+    }
+
+    function toggleVectorC() {
+        const type = document.getElementById('prod-type').value;
+        document.getElementById('card-c').style.display = type === 'triple' ? 'block' : 'none';
+    }
+
+    function calculateProduct() {
+        const type = document.getElementById('prod-type').value;
+        const A = { x: parseFloat(document.getElementById('ax').value)||0, y: parseFloat(document.getElementById('ay').value)||0, z: parseFloat(document.getElementById('az').value)||0 };
+        const B = { x: parseFloat(document.getElementById('bx').value)||0, y: parseFloat(document.getElementById('by').value)||0, z: parseFloat(document.getElementById('bz').value)||0 };
+        let R = {x:0, y:0, z:0};
+        
+        if (type === 'dot') {
+            const dot = A.x*B.x + A.y*B.y + A.z*B.z;
+            document.getElementById('res-prod-box').innerText = `Resultado Escalar: ${dot.toFixed(2)}`;
+            draw3D([A, B], "Punto");
+        } else if (type === 'cross') {
+            R.x = A.y*B.z - A.z*B.y; R.y = A.z*B.x - A.x*B.z; R.z = A.x*B.y - A.y*B.x;
+            document.getElementById('res-prod-box').innerText = `Vector Resultante: (${R.x.toFixed(1)}, ${R.y.toFixed(1)}, ${R.z.toFixed(1)})`;
+            draw3D([A, B, R], "Cruz");
+        } else if (type === 'triple') {
+            const C = { x: parseFloat(document.getElementById('cx').value)||0, y: parseFloat(document.getElementById('cy').value)||0, z: parseFloat(document.getElementById('cz').value)||0 };
+            const BCx = B.y*C.z - B.z*C.y; const BCy = B.z*C.x - B.x*C.z; const BCz = B.x*C.y - B.y*C.x;
+            R.x = A.y*BCz - A.z*BCy; R.y = A.z*BCx - A.x*BCz; R.z = A.x*BCy - A.y*BCx;
+            document.getElementById('res-prod-box').innerText = `Vector Resultante: (${R.x.toFixed(1)}, ${R.y.toFixed(1)}, ${R.z.toFixed(1)})`;
+            draw3D([A, B, C, R], "Triple");
+        }
+    }
+
+    function draw3D(vecs, title) {
+        const traces = vecs.map((v, i) => ({
+            type: 'scatter3d', mode: 'lines+markers', x: [0, v.x], y: [0, v.y], z: [0, v.z],
+            line: { width: 6, color: i === vecs.length-1 ? 'black' : defaultColors[i % 5] },
+            name: i === vecs.length-1 ? 'Resultado' : `Vec ${String.fromCharCode(65+i)}`
+        }));
+        Plotly.newPlot('plot-prod', traces, { margin: {l:0, r:0, b:0, t:0} }, {responsive: true});
+    }
+
+    // FUNCIÓN DE DESCARGA CON MARCA DE AGUA
+    async function downloadPNG(plotId) {
+        const gd = document.getElementById(plotId);
+        const imgData = await Plotly.toImage(gd, { format: 'png', width: 1000, height: 800 });
+        
+        const canvas = document.getElementById('export-canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            canvas.width = 1000; canvas.height = 800;
+            ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            // Marca de agua
+            ctx.font = "bold 20px 'Playfair Display'";
+            ctx.fillStyle = "rgba(150, 150, 150, 0.8)";
+            ctx.textAlign = "right";
+            ctx.fillText("√(Raiz) Cuadrada²", canvas.width - 30, canvas.height - 30);
+            
+            const link = document.createElement('a');
+            link.download = `Vectores-RaizCuadrada-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
+        img.src = imgData;
+    }
+
+    addVectorRow(); addVectorRow();
+</script>
+</body>
+</html>
